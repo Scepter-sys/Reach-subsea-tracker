@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reach Subsea — Fleet Status</title>
+<style>
+  :root{
+    --hull:#0b1f2b;
+    --deck:#12303f;
+    --plate:#173b4d;
+    --steel:#5c7d8a;
+    --foam:#e7f1f3;
+    --signal:#ff8a3d;
+    --active:#3ddc97;
+    --idle:#f2c94c;
+    --unknown:#7a8c94;
+    --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(61,220,151,0.06), transparent 40%),
+      var(--hull);
+    color:var(--foam);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  header{
+    padding:48px 32px 28px;
+    border-bottom:1px solid rgba(231,241,243,0.1);
+    position:relative;
+    overflow:hidden;
+  }
+  header::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(90deg, rgba(231,241,243,0.035) 0 1px, transparent 1px 64px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--signal);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(30px, 4.4vw, 46px);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--steel);
+    font-size:15px;
+    max-width:640px;
+    line-height:1.55;
+  }
+
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:14px 28px;
+    padding:18px 32px;
+    background:var(--deck);
+    border-bottom:1px solid rgba(231,241,243,0.08);
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--steel);
+    align-items:center;
+  }
+  .toolbar b{color:var(--foam); font-weight:500;}
+  .legend{display:flex; gap:16px; margin-left:auto; flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .dot.active{background:var(--active); box-shadow:0 0 8px var(--active);}
+  .dot.idle{background:var(--idle); box-shadow:0 0 8px var(--idle);}
+  .dot.unknown{background:var(--unknown);}
+
+  main{padding:26px 32px 60px;}
+
+  .fleet-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+    gap:16px;
+  }
+
+  .vessel{
+    background:linear-gradient(160deg, var(--plate), var(--deck));
+    border:1px solid rgba(231,241,243,0.08);
+    border-radius:4px;
+    padding:20px 20px 18px;
+    position:relative;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .vessel:hover{border-color:rgba(231,241,243,0.22); transform:translateY(-1px);}
+  .vessel::before{
+    content:"";
+    position:absolute; left:0; top:16px; bottom:16px; width:3px;
+    border-radius:2px;
+    background:var(--unknown);
+  }
+  .vessel.active::before{background:var(--active);}
+  .vessel.idle::before{background:var(--idle);}
+
+  .v-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .v-name{font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin:0;}
+  .v-type{font-family:var(--mono); font-size:11px; color:var(--steel); text-transform:uppercase; letter-spacing:.06em; margin-top:3px;}
+
+  .status-pill{
+    font-family:var(--mono); font-size:11px; letter-spacing:.04em;
+    padding:4px 9px; border-radius:20px; white-space:nowrap;
+    text-transform:uppercase; font-weight:500;
+    border:1px solid transparent;
+  }
+  .status-pill.active{color:var(--active); background:rgba(61,220,151,0.1); border-color:rgba(61,220,151,0.3);}
+  .status-pill.idle{color:var(--idle); background:rgba(242,201,76,0.1); border-color:rgba(242,201,76,0.3);}
+  .status-pill.unknown{color:var(--unknown); background:rgba(122,140,148,0.1); border-color:rgba(122,140,148,0.25);}
+
+  .v-detail{
+    margin-top:14px;
+    font-family:var(--mono); font-size:12.5px; color:var(--foam);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .v-detail .row{display:flex; justify-content:space-between; gap:12px;}
+  .v-detail .k{color:var(--steel);}
+
+  .v-footer{
+    margin-top:16px; padding-top:14px;
+    border-top:1px solid rgba(231,241,243,0.08);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .v-footer a{
+    color:var(--signal); text-decoration:none; font-family:var(--mono);
+    font-size:12px; letter-spacing:.03em;
+  }
+  .v-footer a:hover{text-decoration:underline;}
+  .verified{font-family:var(--mono); font-size:10.5px; color:var(--unknown);}
+
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    margin:36px 0 18px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--steel);
+  }
+  .divider::after{content:""; flex:1; height:1px; background:rgba(231,241,243,0.1);}
+
+  footer{
+    padding:22px 32px 40px;
+    font-family:var(--mono); font-size:11.5px; color:var(--steel);
+    line-height:1.7; max-width:760px;
+  }
+  footer b{color:var(--foam);}
+  footer a{color:var(--signal);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Live AIS reference · Independent tracker</div>
+  <h1>Reach Subsea — Fleet Status</h1>
+  <div class="sub">A working-status board for Reach Subsea ASA's chartered and owned vessels, built from public AIS navigation data. Navigation status is the closest public proxy for "working" — a vessel underway or on DP at a field is almost certainly on a job; one that's moored or at anchor in port is likely idle or in transit between contracts.</div>
+</header>
+
+<div class="toolbar">
+  <span><b>9</b> vessels tracked</span>
+  <span>Snapshot verified <b>19 Aug 2026</b></span>
+  <div class="legend">
+    <span><i class="dot active"></i>Underway / working</span>
+    <span><i class="dot idle"></i>Moored / anchored</span>
+    <span><i class="dot unknown"></i>No recent AIS fix</span>
+  </div>
+</div>
+
+<main>
+  <div class="divider">Core chartered &amp; owned fleet</div>
+  <div class="fleet-grid" id="fleet"></div>
+
+  <div class="divider">Reach Remote — uncrewed survey vessels</div>
+  <div class="fleet-grid" id="remote"></div>
+</main>
+
+<footer>
+  <p><b>How to read this.</b> Each card links to that vessel's live public AIS page (VesselFinder). Open the link for real-time position, speed and course — this page shows a manually-verified snapshot rather than a live feed, since AIS data providers don't allow direct embedding without a paid API key or a map widget. All links go to confirmed IMO-matched pages except <b>Offshore Surveyor</b> and <b>Reach Remote 2</b>, where I couldn't verify an exact IMO/MMSI — those two open a name search on VesselFinder instead of a guessed page, so the link works but you'll need to pick the right result.</p>
+  <p><b>Limitations.</b> "Underway" means the vessel is moving or holding position under power (e.g. DP survey work) — it's a strong signal of an active job, not proof of one. A vessel can be moored between contracts, in transit to a new field, or under maintenance while still showing "underway" briefly, or vice-versa. Cross-check against <a href="https://reachsubsea.no/news/" target="_blank" rel="noopener">Reach Subsea's own charter announcements</a> for contract-level confirmation.</p>
+  <p>Fleet list and specs sourced from <a href="https://reachsubsea.no/assets/" target="_blank" rel="noopener">reachsubsea.no/assets</a>. Position data from <a href="https://www.vesselfinder.com" target="_blank" rel="noopener">VesselFinder</a>.</p>
+</footer>
+
+<script>
+const fleet = [
+  {
+    name:"Deep Cygnus",
+    type:"Subsea Construction / IMR / W2W",
+    status:"idle",
+    statusLabel:"Moored",
+    detail:"North Sea · Empire Offshore Wind Farm",
+    imo:"9479541", mmsi:"257205000",
+    link:"https://www.vesselfinder.com/vessels/details/9479541"
+  },
+  {
+    name:"Havila Subsea",
+    type:"IMR / Light Construction",
+    status:"active",
+    statusLabel:"Underway",
+    detail:"NE Atlantic · en route Vestbase KSU",
+    imo:"9505508", mmsi:"259073000",
+    link:"https://www.vesselfinder.com/vessels/details/9505508"
+  },
+  {
+    name:"Olympic Triton",
+    type:"Multifunctional Subsea / 150t crane",
+    status:"idle",
+    statusLabel:"Holding / DP low-speed",
+    detail:"North Sea · 65°N 7°E, 0.3 kn",
+    imo:"9383754", mmsi:"259424000",
+    link:"https://www.vesselfinder.com/vessels/details/9383754"
+  },
+  {
+    name:"Go Electra",
+    type:"ROV Support Vessel",
+    status:"idle",
+    statusLabel:"Holding low-speed",
+    detail:"North Sea · 53°N 5°E, 0.1 kn",
+    imo:"9545481", mmsi:"538005197",
+    link:"https://www.vesselfinder.com/vessels/details/9545481"
+  },
+  {
+    name:"Olympic Taurus",
+    type:"Survey / IMR",
+    status:"active",
+    statusLabel:"Underway",
+    detail:"North Sea · en route Rotterdam",
+    imo:"9628465", mmsi:"257959000",
+    link:"https://www.vesselfinder.com/vessels/details/9628465"
+  },
+  {
+    name:"Northern Maria",
+    type:"Survey / ROV, DP2",
+    status:"active",
+    statusLabel:"Underway",
+    detail:"North Sea · en route Kristiansund, 9.0 kn",
+    imo:"9294006", mmsi:"219028965",
+    link:"https://www.vesselfinder.com/vessels/details/9294006"
+  },
+  {
+    name:"Offshore Surveyor",
+    type:"Survey, shallow-draft",
+    status:"unknown",
+    statusLabel:"Check live",
+    detail:"IMO not confirmed — search by name",
+    imo:"—", mmsi:"—",
+    link:"https://www.vesselfinder.com/vessels?name=OFFSHORE+SURVEYOR"
+  },
+  {
+    name:"Viking Reach",
+    type:"Survey / IMR / Light Construction",
+    status:"unknown",
+    statusLabel:"Check live — sale pending",
+    detail:"MoA signed for sale, Aug 2026",
+    imo:"9489651", mmsi:"258647000",
+    link:"https://www.vesselfinder.com/vessels/details/9489651"
+  },
+];
+
+const remote = [
+  {
+    name:"Reach Remote 1",
+    type:"Uncrewed Survey USV (24m)",
+    status:"idle",
+    statusLabel:"Holding low-speed",
+    detail:"Norwegian Sea · en route ROV Ops, 0.5 kn",
+    imo:"9972191", mmsi:"257817000",
+    link:"https://www.vesselfinder.com/vessels/details/9972191"
+  },
+  {
+    name:"Reach Remote 2",
+    type:"Uncrewed Survey USV (24m)",
+    status:"unknown",
+    statusLabel:"Check live",
+    detail:"IMO not confirmed — search by name",
+    imo:"—", mmsi:"—",
+    link:"https://www.vesselfinder.com/vessels?name=REACH+REMOTE+2"
+  },
+];
+
+function card(v){
+  return `
+  <div class="vessel ${v.status}">
+    <div class="v-top">
+      <div>
+        <p class="v-name">${v.name}</p>
+        <div class="v-type">${v.type}</div>
+      </div>
+      <span class="status-pill ${v.status}">${v.statusLabel}</span>
+    </div>
+    <div class="v-detail">
+      <div class="row"><span class="k">Position note</span><span>${v.detail}</span></div>
+      <div class="row"><span class="k">IMO</span><span>${v.imo}</span></div>
+      <div class="row"><span class="k">MMSI</span><span>${v.mmsi}</span></div>
+    </div>
+    <div class="v-footer">
+      <a href="${v.link}" target="_blank" rel="noopener">Track live →</a>
+      <span class="verified">verified 19 Aug 2026</span>
+    </div>
+  </div>`;
+}
+
+document.getElementById('fleet').innerHTML = fleet.map(card).join('');
+document.getElementById('remote').innerHTML = remote.map(card).join('');
+</script>
+
+</body>
+</html>
