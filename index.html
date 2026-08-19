@@ -14,6 +14,8 @@
     --signal:#ff8a3d;
     --active:#3ddc97;
     --idle:#f2c94c;
+    --transit:#6ab0ff;
+    --construction:#9b8cff;
     --unknown:#7a8c94;
     --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
     --sans: 'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
@@ -61,7 +63,7 @@
   .sub{
     color:var(--steel);
     font-size:15px;
-    max-width:640px;
+    max-width:680px;
     line-height:1.55;
   }
 
@@ -81,13 +83,14 @@
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
   .dot.active{background:var(--active); box-shadow:0 0 8px var(--active);}
   .dot.idle{background:var(--idle); box-shadow:0 0 8px var(--idle);}
-  .dot.unknown{background:var(--unknown);}
+  .dot.transit{background:var(--transit); box-shadow:0 0 8px var(--transit);}
+  .dot.construction{background:var(--construction); box-shadow:0 0 8px var(--construction);}
 
   main{padding:26px 32px 60px;}
 
   .fleet-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
     gap:16px;
   }
 
@@ -108,6 +111,8 @@
   }
   .vessel.active::before{background:var(--active);}
   .vessel.idle::before{background:var(--idle);}
+  .vessel.transit::before{background:var(--transit);}
+  .vessel.construction::before{background:var(--construction);}
 
   .v-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .v-name{font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin:0;}
@@ -121,15 +126,23 @@
   }
   .status-pill.active{color:var(--active); background:rgba(61,220,151,0.1); border-color:rgba(61,220,151,0.3);}
   .status-pill.idle{color:var(--idle); background:rgba(242,201,76,0.1); border-color:rgba(242,201,76,0.3);}
-  .status-pill.unknown{color:var(--unknown); background:rgba(122,140,148,0.1); border-color:rgba(122,140,148,0.25);}
+  .status-pill.transit{color:var(--transit); background:rgba(106,176,255,0.1); border-color:rgba(106,176,255,0.3);}
+  .status-pill.construction{color:var(--construction); background:rgba(155,140,255,0.1); border-color:rgba(155,140,255,0.3);}
+
+  .campaign{
+    margin-top:12px;
+    font-size:13px; line-height:1.5; color:var(--foam);
+  }
+  .campaign b{color:var(--steel); font-weight:500;}
 
   .v-detail{
     margin-top:14px;
-    font-family:var(--mono); font-size:12.5px; color:var(--foam);
+    font-family:var(--mono); font-size:12px; color:var(--foam);
     display:flex; flex-direction:column; gap:6px;
   }
   .v-detail .row{display:flex; justify-content:space-between; gap:12px;}
-  .v-detail .k{color:var(--steel);}
+  .v-detail .k{color:var(--steel); white-space:nowrap;}
+  .v-detail .v{text-align:right;}
 
   .v-footer{
     margin-top:16px; padding-top:14px;
@@ -143,6 +156,12 @@
   .v-footer a:hover{text-decoration:underline;}
   .verified{font-family:var(--mono); font-size:10.5px; color:var(--unknown);}
 
+  .flag{
+    display:inline-block; margin-top:10px; padding:5px 9px;
+    background:rgba(255,138,61,0.1); border:1px solid rgba(255,138,61,0.35);
+    border-radius:3px; font-family:var(--mono); font-size:11px; color:var(--signal);
+  }
+
   .divider{
     display:flex; align-items:center; gap:14px;
     margin:36px 0 18px;
@@ -153,7 +172,7 @@
   footer{
     padding:22px 32px 40px;
     font-family:var(--mono); font-size:11.5px; color:var(--steel);
-    line-height:1.7; max-width:760px;
+    line-height:1.7; max-width:780px;
   }
   footer b{color:var(--foam);}
   footer a{color:var(--signal);}
@@ -162,129 +181,218 @@
 <body>
 
 <header>
-  <div class="eyebrow">Live AIS reference · Independent tracker</div>
+  <div class="eyebrow">Source: Reach Subsea ASA 2Q 2026 Quarterly Consolidated Report</div>
   <h1>Reach Subsea — Fleet Status</h1>
-  <div class="sub">A working-status board for Reach Subsea ASA's chartered and owned vessels, built from public AIS navigation data. Navigation status is the closest public proxy for "working" — a vessel underway or on DP at a field is almost certainly on a job; one that's moored or at anchor in port is likely idle or in transit between contracts.</div>
+  <div class="sub">Charter status and quarter activity for Reach Subsea's full fleet, taken directly from the company's own quarterly report (period ending 30 June 2026, plus disclosed events after quarter end). This is the most accurate available picture of what each vessel worked on and its contract terms — updated once per quarter when Reach publishes results.</div>
 </header>
 
 <div class="toolbar">
-  <span><b>9</b> vessels tracked</span>
-  <span>Snapshot verified <b>19 Aug 2026</b></span>
+  <span><b>11</b> active fleet · <b>4</b> newbuilds under construction</span>
+  <span>Report period ending <b>30 Jun 2026</b></span>
   <div class="legend">
-    <span><i class="dot active"></i>Underway / working</span>
-    <span><i class="dot idle"></i>Moored / anchored</span>
-    <span><i class="dot unknown"></i>No recent AIS fix</span>
+    <span><i class="dot active"></i>Working / on campaign</span>
+    <span><i class="dot idle"></i>Idle (partial or full quarter)</span>
+    <span><i class="dot transit"></i>In transit / mobilising</span>
+    <span><i class="dot construction"></i>Under construction</span>
   </div>
 </div>
 
 <main>
-  <div class="divider">Core chartered &amp; owned fleet</div>
+  <div class="divider">Active fleet — 11 vessels</div>
   <div class="fleet-grid" id="fleet"></div>
 
-  <div class="divider">Reach Remote — uncrewed survey vessels</div>
-  <div class="fleet-grid" id="remote"></div>
+  <div class="divider">Newbuilds — under construction</div>
+  <div class="fleet-grid" id="newbuild"></div>
 </main>
 
 <footer>
-  <p><b>How to read this.</b> Each card links to that vessel's live public AIS page (VesselFinder). Open the link for real-time position, speed and course — this page shows a manually-verified snapshot rather than a live feed, since AIS data providers don't allow direct embedding without a paid API key or a map widget. All links go to confirmed IMO-matched pages except <b>Offshore Surveyor</b> and <b>Reach Remote 2</b>, where I couldn't verify an exact IMO/MMSI — those two open a name search on VesselFinder instead of a guessed page, so the link works but you'll need to pick the right result.</p>
-  <p><b>Limitations.</b> "Underway" means the vessel is moving or holding position under power (e.g. DP survey work) — it's a strong signal of an active job, not proof of one. A vessel can be moored between contracts, in transit to a new field, or under maintenance while still showing "underway" briefly, or vice-versa. Cross-check against <a href="https://reachsubsea.no/news/" target="_blank" rel="noopener">Reach Subsea's own charter announcements</a> for contract-level confirmation.</p>
-  <p>Fleet list and specs sourced from <a href="https://reachsubsea.no/assets/" target="_blank" rel="noopener">reachsubsea.no/assets</a>. Position data from <a href="https://www.vesselfinder.com" target="_blank" rel="noopener">VesselFinder</a>.</p>
+  <p><b>How to read this.</b> Each card shows the vessel's charter period, owner, crane capacity, onboard assets and a summary of what it actually worked on during 2Q 2026 (April–June), as disclosed by Reach Subsea. The colored status reflects how that quarter ended — not a live position. For real-time position, use the "Track live" link where available.</p>
+  <p><b>Viking Reach sale.</b> On 4 August 2026, Eidesvik Reach AS (Reach's 49.9%-owned joint venture) signed an agreement to sell Viking Reach, expected to complete in Q4 2026 and unlock over NOK 200 million in liquidity.</p>
+  <p><b>Newbuilds.</b> Viking Vigor is expected to enter the fleet in H2 2026; Newbuild NB76 and Reach Remote 3 & 4 are expected in 2027.</p>
+  <p>Fleet data sourced from Reach Subsea's <b>2Q 2026 Quarterly Consolidated Report</b> (Haugesund, 17 August 2026). Live tracking links from <a href="https://www.vesselfinder.com" target="_blank" rel="noopener">VesselFinder</a> where a confirmed IMO is available.</p>
 </footer>
 
 <script>
 const fleet = [
   {
-    name:"Deep Cygnus",
-    type:"Subsea Construction / IMR / W2W",
-    status:"idle",
-    statusLabel:"Moored",
-    detail:"North Sea · Empire Offshore Wind Farm",
-    imo:"9479541", mmsi:"257205000",
-    link:"https://www.vesselfinder.com/vessels/details/9479541"
+    name:"Viking Reach",
+    type:"Survey, IMR & Light Construction",
+    status:"active",
+    statusLabel:"Working",
+    charter:"Apr 2023 – Apr 2029 (3yr option)",
+    owner:"Eidesvik Offshore ASA (50.1%) / Reach Subsea ASA (49.9%)",
+    crane:"70 ton",
+    assets:"1 Supporter WROV, 1 Surveyor Interceptor ROV, survey equipment",
+    campaign:"Cable-route survey for SSEN in the UK throughout the quarter.",
+    flag:"Sale agreement signed 4 Aug 2026 — expected to complete Q4 2026",
+    link:"https://www.vesselfinder.com/vessels/details/9489651"
   },
   {
     name:"Havila Subsea",
-    type:"IMR / Light Construction",
-    status:"active",
-    statusLabel:"Underway",
-    detail:"NE Atlantic · en route Vestbase KSU",
-    imo:"9505508", mmsi:"259073000",
+    type:"Survey, IMR & Light Construction",
+    status:"idle",
+    statusLabel:"Idle (last 15 days)",
+    charter:"Jun 2024 – Jun 2027 (2×1yr option)",
+    owner:"Havila Shipping ASA",
+    crane:"150 ton",
+    assets:"2× Schilling HD WROV, 1 Surveyor Interceptor ROV, survey equipment",
+    campaign:"Multiple Surveyor Interceptor campaigns for SSEN, Equinor and Ørsted, followed by the last 15 days of the quarter idle.",
     link:"https://www.vesselfinder.com/vessels/details/9505508"
   },
   {
-    name:"Olympic Triton",
-    type:"Multifunctional Subsea / 150t crane",
-    status:"idle",
-    statusLabel:"Holding / DP low-speed",
-    detail:"North Sea · 65°N 7°E, 0.3 kn",
-    imo:"9383754", mmsi:"259424000",
-    link:"https://www.vesselfinder.com/vessels/details/9383754"
+    name:"Deep Cygnus",
+    type:"Construction Vessel",
+    status:"active",
+    statusLabel:"Working",
+    charter:"Apr 2022 – Apr 2027 (1yr option)",
+    owner:"Volstad Maritime AS",
+    crane:"150 ton",
+    assets:"1 Supporter WROV, survey equipment",
+    campaign:"Finalized ROV and survey services for Nexans' cable installation project, followed by a cable repair project on a UK offshore windfarm.",
+    link:"https://www.vesselfinder.com/vessels/details/9479541"
   },
   {
     name:"Go Electra",
-    type:"ROV Support Vessel",
+    type:"Survey, IMR & Light Construction",
     status:"idle",
-    statusLabel:"Holding low-speed",
-    detail:"North Sea · 53°N 5°E, 0.1 kn",
-    imo:"9545481", mmsi:"538005197",
+    statusLabel:"Mostly idle",
+    charter:"Mar 2023 – Mar 2027 (2×1yr option)",
+    owner:"Go Offshore Pty Ltd.",
+    crane:"25 ton",
+    assets:"1 Supporter WROV, survey equipment",
+    campaign:"16 days of IMR scopes and testing of a subsea desalination plant with Flocean; idle for the rest of the quarter.",
     link:"https://www.vesselfinder.com/vessels/details/9545481"
   },
   {
-    name:"Olympic Taurus",
-    type:"Survey / IMR",
+    name:"Olympic Triton",
+    type:"IMR & Light Construction",
     status:"active",
-    statusLabel:"Underway",
-    detail:"North Sea · en route Rotterdam",
-    imo:"9628465", mmsi:"257959000",
-    link:"https://www.vesselfinder.com/vessels/details/9628465"
+    statusLabel:"Working",
+    charter:"Feb 2023 – Feb 2027 (1yr option)",
+    owner:"Olympic Subsea ASA",
+    crane:"150 ton",
+    assets:"2× WROV Constructor & Supporter, survey equipment",
+    campaign:"Construction support campaign in the first part of the quarter, followed by cable inspection and the U-864 submarine wreck survey/intervention campaign.",
+    link:"https://www.vesselfinder.com/vessels/details/9383754"
   },
   {
     name:"Northern Maria",
-    type:"Survey / ROV, DP2",
+    type:"Survey & IMR",
     status:"active",
-    statusLabel:"Underway",
-    detail:"North Sea · en route Kristiansund, 9.0 kn",
-    imo:"9294006", mmsi:"219028965",
+    statusLabel:"Working",
+    charter:"Apr 2023 – Apr 2027 (2×6mo option)",
+    owner:"Northern Survey Aps",
+    crane:"20 ton",
+    assets:"Survey equipment",
+    campaign:"Geotechnical survey for SSEN across the majority of the quarter.",
     link:"https://www.vesselfinder.com/vessels/details/9294006"
   },
   {
+    name:"Olympic Taurus",
+    type:"IMR & Light Construction",
+    status:"active",
+    statusLabel:"Working",
+    charter:"Apr 2024 – Apr 2027 (1yr option)",
+    owner:"Olympic Subsea ASA",
+    crane:"150 ton",
+    assets:"2× WROV Constructors, survey equipment",
+    campaign:"IMR scopes in the North Sea, followed by a UXO campaign for Saipem and an IMR campaign for Harbour Energy.",
+    link:"https://www.vesselfinder.com/vessels?name=OLYMPIC+TAURUS"
+  },
+  {
     name:"Offshore Surveyor",
-    type:"Survey, shallow-draft",
-    status:"unknown",
-    statusLabel:"Check live",
-    detail:"IMO not confirmed — search by name",
-    imo:"—", mmsi:"—",
+    type:"Survey Vessel",
+    status:"transit",
+    statusLabel:"Transferring contract",
+    charter:"Jun 2024 – Jun 2027 (1yr + 6mo option)",
+    owner:"Guardian Offshore AU",
+    crane:"None",
+    assets:"Survey equipment",
+    campaign:"Finalized a CCS project, then transferring to geophysical surveys for Woodside, the Australian Government and other clients.",
     link:"https://www.vesselfinder.com/vessels?name=OFFSHORE+SURVEYOR"
   },
   {
-    name:"Viking Reach",
-    type:"Survey / IMR / Light Construction",
-    status:"unknown",
-    statusLabel:"Check live — sale pending",
-    detail:"MoA signed for sale, Aug 2026",
-    imo:"9489651", mmsi:"258647000",
-    link:"https://www.vesselfinder.com/vessels/details/9489651"
+    name:"Normand Jarstein",
+    type:"IMR & Construction",
+    status:"transit",
+    statusLabel:"In transit",
+    charter:"May 2026 – May 2028 (1yr option)",
+    owner:"Solstad Maritime ASA",
+    crane:"250 ton",
+    assets:"2× WROV Constructors, survey equipment",
+    campaign:"Transit to Turkey and start-up of a long-term IMR campaign.",
+    link:"https://www.vesselfinder.com/vessels?name=NORMAND+JARSTEIN"
   },
-];
-
-const remote = [
   {
     name:"Reach Remote 1",
-    type:"Uncrewed Survey USV (24m)",
-    status:"idle",
-    statusLabel:"Holding low-speed",
-    detail:"Norwegian Sea · en route ROV Ops, 0.5 kn",
-    imo:"9972191", mmsi:"257817000",
+    type:"Uncrewed Surface Vessel",
+    status:"active",
+    statusLabel:"Working",
+    charter:"Owned vessel",
+    owner:"Reach Subsea ASA",
+    crane:"None",
+    assets:"State-of-the-art ZeeROV, survey equipment",
+    campaign:"Pipeline inspection and survey campaign for Equinor, plus various IMR scopes for other clients. First vessel to operate in the UK sector while remotely controlled from Norway.",
     link:"https://www.vesselfinder.com/vessels/details/9972191"
   },
   {
     name:"Reach Remote 2",
-    type:"Uncrewed Survey USV (24m)",
-    status:"unknown",
-    statusLabel:"Check live",
-    detail:"IMO not confirmed — search by name",
-    imo:"—", mmsi:"—",
-    link:"https://www.vesselfinder.com/vessels?name=REACH+REMOTE+2"
+    type:"Uncrewed Surface Vessel",
+    status:"idle",
+    statusLabel:"Idle (last month)",
+    charter:"Owned vessel",
+    owner:"Reach Subsea ASA",
+    crane:"None",
+    assets:"State-of-the-art ZeeROV, survey equipment",
+    campaign:"IMR scopes for Woodside and other Australian clients across multiple fields, with the last month of the quarter idle.",
+    link:"https://www.vesselfinder.com?name=REACH+REMOTE+2"
+  },
+];
+
+const newbuild = [
+  {
+    name:"Viking Vigor",
+    type:"IMR & Light Construction",
+    status:"construction",
+    statusLabel:"Under construction",
+    charter:"Entering fleet 2026 →",
+    owner:"Eidesvik Agalas AS",
+    crane:"150 ton",
+    assets:"Will be mobilised with state-of-the-art WROVs and survey equipment.",
+    campaign:"Expected delivery H2 2026 — will add an estimated NOK 414 million to interest-bearing lease debt at commencement.",
+  },
+  {
+    name:"Newbuild NB76",
+    type:"IMR & Light Construction",
+    status:"construction",
+    statusLabel:"Under construction",
+    charter:"Entering fleet 2027 →",
+    owner:"Eidesvik Agalas AS (66.7%) / Reach Subsea ASA (33.3%)",
+    crane:"150 ton",
+    assets:"Will be mobilised with state-of-the-art WROVs and survey equipment.",
+    campaign:"Expected delivery 2027 — will add an estimated NOK 427 million to interest-bearing lease debt at commencement.",
+  },
+  {
+    name:"Reach Remote 3",
+    type:"Uncrewed Surface Vessel",
+    status:"construction",
+    statusLabel:"Under construction",
+    charter:"Entering fleet 2027 →",
+    owner:"Reach Subsea ASA",
+    crane:"None",
+    assets:"State-of-the-art ZeeROV and survey equipment.",
+    campaign:"Co-funded by the EU Emissions Trading System Innovation Fund. Combined with Reach Remote 4, total project cost ~NOK 622.7 million.",
+  },
+  {
+    name:"Reach Remote 4",
+    type:"Uncrewed Surface Vessel",
+    status:"construction",
+    statusLabel:"Under construction",
+    charter:"Entering fleet 2027 →",
+    owner:"Reach Subsea ASA",
+    crane:"None",
+    assets:"State-of-the-art ZeeROV and survey equipment.",
+    campaign:"Co-funded by the EU Emissions Trading System Innovation Fund. As of 30 Jun 2026, NOK 252.8m capitalised for Remote 3 & 4 combined.",
   },
 ];
 
@@ -298,20 +406,23 @@ function card(v){
       </div>
       <span class="status-pill ${v.status}">${v.statusLabel}</span>
     </div>
+    <div class="campaign"><b>2Q26:</b> ${v.campaign}</div>
     <div class="v-detail">
-      <div class="row"><span class="k">Position note</span><span>${v.detail}</span></div>
-      <div class="row"><span class="k">IMO</span><span>${v.imo}</span></div>
-      <div class="row"><span class="k">MMSI</span><span>${v.mmsi}</span></div>
+      <div class="row"><span class="k">Charter period</span><span class="v">${v.charter}</span></div>
+      <div class="row"><span class="k">Vessel owner</span><span class="v">${v.owner}</span></div>
+      <div class="row"><span class="k">Crane</span><span class="v">${v.crane}</span></div>
+      <div class="row"><span class="k">Assets</span><span class="v">${v.assets}</span></div>
     </div>
+    ${v.flag ? `<div class="flag">${v.flag}</div>` : ''}
     <div class="v-footer">
-      <a href="${v.link}" target="_blank" rel="noopener">Track live →</a>
-      <span class="verified">verified 19 Aug 2026</span>
+      ${v.link ? `<a href="${v.link}" target="_blank" rel="noopener">Track live →</a>` : '<span></span>'}
+      <span class="verified">2Q 2026 report</span>
     </div>
   </div>`;
 }
 
 document.getElementById('fleet').innerHTML = fleet.map(card).join('');
-document.getElementById('remote').innerHTML = remote.map(card).join('');
+document.getElementById('newbuild').innerHTML = newbuild.map(card).join('');
 </script>
 
 </body>
