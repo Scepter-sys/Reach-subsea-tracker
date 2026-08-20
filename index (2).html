@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reach Subsea — Live Fleet Tracker</title>
+<style>
+  :root{
+    --hull:#0b1f2b;
+    --deck:#12303f;
+    --plate:#173b4d;
+    --steel:#5c7d8a;
+    --foam:#e7f1f3;
+    --signal:#ff8a3d;
+    --active:#3ddc97;
+    --unknown:#7a8c94;
+    --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, Segoe UI, sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(61,220,151,0.06), transparent 40%),
+      var(--hull);
+    color:var(--foam);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  header{
+    padding:48px 32px 28px;
+    border-bottom:1px solid rgba(231,241,243,0.1);
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--signal);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(30px, 4.4vw, 46px);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--steel);
+    font-size:15px;
+    max-width:680px;
+    line-height:1.55;
+  }
+
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:14px 28px;
+    padding:16px 32px;
+    background:var(--deck);
+    border-bottom:1px solid rgba(231,241,243,0.08);
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--steel);
+    align-items:center;
+  }
+  .toolbar b{color:var(--foam); font-weight:500;}
+  #clock{color:var(--active); margin-left:auto;}
+
+  main{padding:26px 32px 60px;}
+
+  .fleet-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
+    gap:16px;
+  }
+
+  .vessel{
+    background:linear-gradient(160deg, var(--plate), var(--deck));
+    border:1px solid rgba(231,241,243,0.08);
+    border-radius:4px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+
+  .map-wrap{
+    position:relative;
+    width:100%; height:220px;
+    background:#0a1620;
+    border-bottom:1px solid rgba(231,241,243,0.08);
+  }
+  .map-wrap iframe{width:100%; height:100%; border:0; display:block;}
+  .map-placeholder{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:12px; color:var(--unknown); text-align:center; padding:16px;
+  }
+  .live-badge{
+    position:absolute; top:8px; left:8px; z-index:2;
+    background:rgba(11,31,43,0.85); backdrop-filter:blur(2px);
+    border:1px solid rgba(61,220,151,0.4);
+    color:var(--active); font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:3px 7px; border-radius:20px; text-transform:uppercase;
+    display:flex; align-items:center; gap:5px;
+  }
+  .live-badge .pulse{
+    width:6px; height:6px; border-radius:50%; background:var(--active);
+    animation:pulse 1.8s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(61,220,151,0.6);}
+    70%{box-shadow:0 0 0 6px rgba(61,220,151,0);}
+    100%{box-shadow:0 0 0 0 rgba(61,220,151,0);}
+  }
+
+  .v-body{padding:16px 18px 18px;}
+  .v-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .v-name{font-family:'Fraunces', serif; font-weight:600; font-size:18px; margin:0;}
+  .v-type{font-family:var(--mono); font-size:11px; color:var(--steel); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+
+  .v-detail{
+    margin-top:12px;
+    font-family:var(--mono); font-size:11.5px; color:var(--foam);
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .v-detail .row{display:flex; justify-content:space-between; gap:12px;}
+  .v-detail .k{color:var(--steel); white-space:nowrap;}
+  .v-detail .v{text-align:right;}
+
+  .v-footer{
+    margin-top:12px; padding-top:12px;
+    border-top:1px solid rgba(231,241,243,0.08);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .v-footer a{
+    color:var(--signal); text-decoration:none; font-family:var(--mono);
+    font-size:11.5px; letter-spacing:.03em;
+  }
+  .v-footer a:hover{text-decoration:underline;}
+  .refresh-note{font-family:var(--mono); font-size:10px; color:var(--unknown);}
+
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    margin:36px 0 18px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--steel);
+  }
+  .divider::after{content:""; flex:1; height:1px; background:rgba(231,241,243,0.1);}
+
+  footer{
+    padding:22px 32px 40px;
+    font-family:var(--mono); font-size:11.5px; color:var(--steel);
+    line-height:1.7; max-width:780px;
+  }
+  footer b{color:var(--foam);}
+  footer a{color:var(--signal);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Live AIS · auto-refreshing</div>
+  <h1>Reach Subsea — Live Fleet Tracker</h1>
+  <div class="sub">Real-time position map for each vessel, pulled live from public AIS data every time this page is open. Each map auto-refreshes on its own — reload the page any time for the latest fix. Vessel identity, owner and charter details are confirmed from Reach Subsea's own fleet register.</div>
+</header>
+
+<div class="toolbar">
+  <span><b>11</b> of 11 vessels have live tracking</span>
+  <span>Maps auto-refresh every <b>3 min</b></span>
+  <span id="clock"></span>
+</div>
+
+<main>
+  <div class="divider">Live-tracked fleet — 11 vessels</div>
+  <div class="fleet-grid" id="fleet"></div>
+</main>
+
+<footer>
+  <p><b>How this works.</b> Each map is a live embed from VesselFinder's public AIS network — the same live position data as their main site, refreshed automatically in your browser. No login or API key involved; this is the free public tier, so coverage depends on whether that vessel is currently transmitting AIS and within range of a receiver.</p>
+  <p><b>Reading the map.</b> A vessel actively moving or holding position under DP (dynamic positioning) is very likely on a job. One sitting still in a port or anchorage is very likely idle or between contracts. Click into a card's map to open the full VesselFinder page for speed, course and navigational status text.</p>
+  <p>Vessel identity and charter data from Reach Subsea's 2Q 2026 Quarterly Report, cross-checked against VesselFinder, MarineTraffic and MagicPort registry records for IMO/MMSI accuracy. Live positions from <a href="https://www.vesselfinder.com" target="_blank" rel="noopener">VesselFinder</a>.</p>
+</footer>
+
+<script>
+const REFRESH_MS = 180000; // 3 minutes
+
+const fleet = [
+  { name:"Viking Reach", type:"Survey, IMR & Light Construction", owner:"Eidesvik Offshore ASA / Reach Subsea ASA", charter:"Apr 2023 – Apr 2029", imo:"9489651" },
+  { name:"Havila Subsea", type:"Survey, IMR & Light Construction", owner:"Havila Shipping ASA", charter:"Jun 2024 – Jun 2027", imo:"9505508" },
+  { name:"Deep Cygnus", type:"Construction Vessel", owner:"Volstad Maritime AS", charter:"Apr 2022 – Apr 2027", imo:"9479541" },
+  { name:"Go Electra", type:"Survey, IMR & Light Construction", owner:"Go Offshore Pty Ltd.", charter:"Mar 2023 – Mar 2027", imo:"9545481" },
+  { name:"Olympic Triton", type:"IMR & Light Construction", owner:"Olympic Subsea ASA", charter:"Feb 2023 – Feb 2027", imo:"9383754" },
+  { name:"Northern Maria", type:"Survey & IMR", owner:"Northern Survey Aps", charter:"Apr 2023 – Apr 2027", imo:"9294006" },
+  { name:"Olympic Taurus", type:"IMR & Light Construction", owner:"Olympic Subsea ASA", charter:"Apr 2024 – Apr 2027", imo:"9628465" },
+  { name:"Normand Jarstein", type:"IMR & Construction", owner:"Solstad Maritime ASA", charter:"May 2026 – May 2028", imo:"9686821" },
+  { name:"Reach Remote 1", type:"Uncrewed Surface Vessel", owner:"Reach Subsea ASA", charter:"Owned vessel", imo:"9972191" },
+  { name:"Offshore Surveyor", type:"Survey Vessel", owner:"Guardian Offshore AU", charter:"Jun 2024 – Jun 2027", imo:"9938119" },
+  { name:"Reach Remote 2", type:"Uncrewed Surface Vessel", owner:"Reach Subsea ASA", charter:"Owned vessel", imo:"9972206" },
+];
+
+const unmapped = [];
+
+function mapSrc(imo){
+  return `https://www.vesselfinder.com/aismap?zoom=6&width=100%&height=100%&names=true&imo=${imo}&track=true&t=${Date.now()}`;
+}
+
+function card(v){
+  return `
+  <div class="vessel">
+    <div class="map-wrap">
+      <span class="live-badge"><span class="pulse"></span>Live</span>
+      <iframe id="map-${v.imo}" src="${mapSrc(v.imo)}" loading="lazy" title="${v.name} live position"></iframe>
+    </div>
+    <div class="v-body">
+      <div class="v-top">
+        <div>
+          <p class="v-name">${v.name}</p>
+          <div class="v-type">${v.type}</div>
+        </div>
+      </div>
+      <div class="v-detail">
+        <div class="row"><span class="k">Charter period</span><span class="v">${v.charter}</span></div>
+        <div class="row"><span class="k">Vessel owner</span><span class="v">${v.owner}</span></div>
+        <div class="row"><span class="k">IMO</span><span class="v">${v.imo}</span></div>
+      </div>
+      <div class="v-footer">
+        <a href="https://www.vesselfinder.com/vessels/details/${v.imo}" target="_blank" rel="noopener">Full details →</a>
+        <span class="refresh-note">auto-refresh 3min</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardNoMap(v){
+  return `
+  <div class="vessel">
+    <div class="map-wrap">
+      <div class="map-placeholder">No confirmed IMO/MMSI —<br>use the search link below</div>
+    </div>
+    <div class="v-body">
+      <div class="v-top">
+        <div>
+          <p class="v-name">${v.name}</p>
+          <div class="v-type">${v.type}</div>
+        </div>
+      </div>
+      <div class="v-detail">
+        <div class="row"><span class="k">Charter period</span><span class="v">${v.charter}</span></div>
+        <div class="row"><span class="k">Vessel owner</span><span class="v">${v.owner}</span></div>
+      </div>
+      <div class="v-footer">
+        <a href="https://www.vesselfinder.com/vessels?name=${encodeURIComponent(v.search)}" target="_blank" rel="noopener">Search on VesselFinder →</a>
+        <span class="refresh-note">no live feed</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+document.getElementById('fleet').innerHTML = fleet.map(card).join('');
+document.getElementById('unmapped').innerHTML = unmapped.map(cardNoMap).join('');
+
+// Auto-refresh each map iframe periodically so the page stays live without a manual reload
+setInterval(() => {
+  fleet.forEach(v => {
+    const f = document.getElementById(`map-${v.imo}`);
+    if (f) f.src = mapSrc(v.imo);
+  });
+}, REFRESH_MS);
+
+// Live clock so it's visually obvious the page is "live", not a static snapshot
+function tick(){
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toUTCString().slice(0,25) + ' UTC';
+}
+tick();
+setInterval(tick, 1000);
+</script>
+
+</body>
+</html>
